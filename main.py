@@ -2,6 +2,9 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import json
+import tkinter as tk
+from tkinter import messagebox
+
 
 def get_html(url):
     headers = {
@@ -14,11 +17,12 @@ def get_html(url):
         print(f"Failed to retrieve the webpage. Status code: {response.status_code}")
         return None
 
+
 def parse_json_data(html):
     soup = BeautifulSoup(html, 'html.parser')
     script_tag = soup.find('script', id='__NEXT_DATA__')
     json_data = json.loads(script_tag.string)
-    
+
     listings = []
     for item in json_data['props']['pageProps']['ads']:
         try:
@@ -50,12 +54,9 @@ def parse_json_data(html):
 
     return listings
 
-def main():
-    base_url = 'https://www.olx.com.br/imoveis/aluguel'
-    all_listings = []
 
-    # Define the number of pages to scrape
-    num_pages = 5
+def main(base_url, num_pages):
+    all_listings = []
 
     for page in range(1, num_pages + 1):
         url = f'{base_url}?o={page}'
@@ -74,8 +75,30 @@ def main():
         df = pd.DataFrame(all_listings)
         df.to_csv('olx_real_estate_rentals.csv', index=False)
         print("Data has been exported to olx_real_estate_rentals.csv")
+        messagebox.showinfo("Success", "Data has been exported to olx_real_estate_rentals.csv")
     else:
         print("No listings found.")
+        messagebox.showwarning("Warning", "No listings found.")
 
-if __name__ == "__main__":
-    main()
+
+def start_scraping():
+    base_url = entry_base_url.get()
+    num_pages = int(entry_num_pages.get())
+    main(base_url, num_pages)
+
+
+# Create the tkinter UI
+root = tk.Tk()
+root.title("OLX Scraper")
+
+tk.Label(root, text="Base URL:").grid(row=0, column=0, padx=10, pady=10)
+entry_base_url = tk.Entry(root, width=50)
+entry_base_url.grid(row=0, column=1, padx=10, pady=10)
+
+tk.Label(root, text="Number of Pages:").grid(row=1, column=0, padx=10, pady=10)
+entry_num_pages = tk.Entry(root, width=10)
+entry_num_pages.grid(row=1, column=1, padx=10, pady=10)
+
+tk.Button(root, text="Start Scraping", command=start_scraping).grid(row=2, column=0, columnspan=2, pady=20)
+
+root.mainloop()
